@@ -27,6 +27,3 @@ A professional, high-fidelity in-plant attendance and overtime tracking system d
 3. Set up environment variables in `.env` (Supabase URL and Anon Key).
 4. Run development server: `npm run dev`
 5. Build for production: `npm run build`
-
----
-Developed by **DAVNS INDUSTRIES**

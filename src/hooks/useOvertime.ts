@@ -24,7 +24,7 @@ export interface OvertimeWithWorker extends Overtime {
 
 export function useOvertimeByDate(date: Date) {
   const dateStr = format(date, "yyyy-MM-dd");
-  
+
   return useQuery({
     queryKey: ["overtime", dateStr],
     queryFn: async () => {
@@ -39,7 +39,7 @@ export function useOvertimeByDate(date: Date) {
           )
         `)
         .eq("date", dateStr);
-      
+
       if (error) throw error;
       return data as OvertimeWithWorker[];
     },
@@ -55,12 +55,12 @@ export function useWorkerOvertimeStats(workerId: string) {
         .select("*")
         .eq("worker_id", workerId)
         .order("date", { ascending: false });
-      
+
       if (error) throw error;
-      
+
       const totalHours = data.reduce((sum, record) => sum + Number(record.hours_worked), 0);
       const overtimeDays = Math.floor(totalHours / 9);
-      
+
       return {
         records: data as Overtime[],
         totalHours: Math.round(totalHours * 100) / 100,
@@ -73,7 +73,7 @@ export function useWorkerOvertimeStats(workerId: string) {
 
 export function useTodayOvertimeStats() {
   const today = format(new Date(), "yyyy-MM-dd");
-  
+
   return useQuery({
     queryKey: ["overtime", "today", today],
     queryFn: async () => {
@@ -81,12 +81,12 @@ export function useTodayOvertimeStats() {
         .from("overtime")
         .select("hours_worked, worker_id")
         .eq("date", today);
-      
+
       if (error) throw error;
-      
+
       const totalHours = data.reduce((sum, record) => sum + Number(record.hours_worked), 0);
       const workerCount = new Set(data.map((r) => r.worker_id)).size;
-      
+
       return {
         totalHours: Math.round(totalHours * 100) / 100,
         workerCount,
@@ -95,9 +95,59 @@ export function useTodayOvertimeStats() {
   });
 }
 
+export function useOvertimeStatsByRange(startDate: Date, endDate: Date, workerId?: string) {
+  const start = format(startDate, "yyyy-MM-dd");
+  const end = format(endDate, "yyyy-MM-dd");
+
+  return useQuery({
+    queryKey: ["overtime", "range", start, end, workerId],
+    queryFn: async () => {
+      let query = supabase
+        .from("overtime")
+        .select("hours_worked, date, worker_id, workers(worker_name, department)")
+        .gte("date", start)
+        .lte("date", end);
+
+      if (workerId && workerId !== "all") {
+        query = query.eq("worker_id", workerId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const totalHours = data.reduce((sum, r) => sum + Number(r.hours_worked), 0);
+      const workerCount = new Set(data.map((r) => r.worker_id)).size;
+
+      const byDate: Record<string, number> = {};
+      const byWorker: Record<string, { name: string; hours: number; dept: string }> = {};
+
+      data.forEach((r: any) => {
+        byDate[r.date] = (byDate[r.date] || 0) + Number(r.hours_worked);
+
+        if (!byWorker[r.worker_id]) {
+          byWorker[r.worker_id] = {
+            name: r.workers?.worker_name || "Unknown",
+            hours: 0,
+            dept: r.workers?.department || "N/A"
+          };
+        }
+        byWorker[r.worker_id].hours += Number(r.hours_worked);
+      });
+
+      return {
+        totalHours: Math.round(totalHours * 100) / 100,
+        workerCount,
+        byDate,
+        byWorker: Object.entries(byWorker).map(([id, stats]) => ({ id, ...stats })),
+      };
+    },
+  });
+}
+
 export function useAddOvertime() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       workerId,
@@ -114,7 +164,7 @@ export function useAddOvertime() {
       const end = new Date(`2000-01-01T${endTime}`);
       let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
       if (hours < 0) hours += 24;
-      
+
       const { data, error } = await supabase
         .from("overtime")
         .insert({
@@ -126,7 +176,7 @@ export function useAddOvertime() {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },

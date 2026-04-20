@@ -78,10 +78,10 @@ export default function Login() {
         <div className="text-center space-y-4">
           <div className="relative inline-block group">
             <div className="absolute -inset-6 bg-primary/20 rounded-full blur-3xl group-hover:bg-primary/30 transition-all duration-500" />
-            <img 
-              src="/stellantis-logo.svg" 
-              alt="Stellantis" 
-              className="h-28 w-auto mx-auto relative drop-shadow-2xl transition-transform duration-500 group-hover:scale-105" 
+            <img
+              src="/stellantis-logo.svg"
+              alt="Stellantis"
+              className="h-28 w-auto mx-auto relative drop-shadow-2xl transition-transform duration-500 group-hover:scale-105"
             />
           </div>
           <div>
@@ -89,9 +89,9 @@ export default function Login() {
               STELAT Access Center
             </h1>
             <div className="flex items-center justify-center gap-2 mt-2">
-               <div className="h-[1px] w-8 bg-border" />
-               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40">Secure Identity Gateway</p>
-               <div className="h-[1px] w-8 bg-border" />
+              <div className="h-[1px] w-8 bg-border" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40">Secure Identity Gateway</p>
+              <div className="h-[1px] w-8 bg-border" />
             </div>
           </div>
         </div>
@@ -101,14 +101,14 @@ export default function Login() {
           <CardContent className="p-0">
             <Tabs defaultValue="login" className="w-full min-h-[460px]">
               <TabsList className="w-full h-14 bg-white/5 p-1 rounded-none border-b border-white/5">
-                <TabsTrigger 
-                  value="login" 
+                <TabsTrigger
+                  value="login"
                   className="flex-1 h-full rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-primary font-black text-xs uppercase tracking-widest gap-2"
                 >
                   <Lock className="w-3.5 h-3.5" /> Sign In
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="signup" 
+                <TabsTrigger
+                  value="signup"
                   className="flex-1 h-full rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-primary font-black text-xs uppercase tracking-widest gap-2"
                 >
                   <UserPlus className="w-3.5 h-3.5" /> Register
@@ -121,13 +121,13 @@ export default function Login() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground">Email</Label>
-                        <Input 
-                          type="email" 
-                          placeholder="j.doe@company.com" 
+                        <Input
+                          type="email"
+                          placeholder="j.doe@company.com"
                           value={loginData.email}
-                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} 
-                          required 
-                          className="premium-input h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20" 
+                          onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                          required
+                          className="premium-input h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20"
                         />
                       </div>
                       <div className="space-y-2">
@@ -135,13 +135,13 @@ export default function Login() {
                           <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">password</Label>
                           <Button variant="link" className="h-auto p-0 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Reset</Button>
                         </div>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••" 
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
                           value={loginData.password}
-                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} 
-                          required 
-                          className="premium-input h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20" 
+                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                          required
+                          className="premium-input h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20"
                         />
                       </div>
                     </div>
@@ -156,12 +156,12 @@ export default function Login() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground">Full Name</Label>
-                        <Input 
-                          placeholder="John Doe" 
+                        <Input
+                          placeholder="John Doe"
                           value={signupData.fullName}
-                          onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })} 
-                          required 
-                          className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl" 
+                          onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                          required
+                          className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl"
                         />
                       </div>
                       <div className="space-y-2">
@@ -180,25 +180,25 @@ export default function Login() {
 
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground">Email Address</Label>
-                      <Input 
-                        type="email" 
-                        placeholder="email@company.com" 
+                      <Input
+                        type="email"
+                        placeholder="email@company.com"
                         value={signupData.email}
-                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} 
-                        required 
-                        className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl" 
+                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                        required
+                        className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl"
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 text-muted-foreground">password</Label>
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••" 
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
                         value={signupData.password}
-                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} 
-                        required 
-                        className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl" 
+                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                        required
+                        className="premium-input h-11 bg-white/5 border-white/10 rounded-2xl"
                       />
                     </div>
 
@@ -207,13 +207,13 @@ export default function Login() {
                         <Label className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ml-1 text-primary">
                           <ShieldCheck className="w-3 h-3" /> Admin Auth Key
                         </Label>
-                        <Input 
-                          type="password" 
-                          placeholder="REQUIRED FOR ADMIN" 
+                        <Input
+                          type="password"
+                          placeholder="REQUIRED FOR ADMIN"
                           value={signupData.secretKey}
-                          onChange={(e) => setSignupData({ ...signupData, secretKey: e.target.value })} 
-                          required 
-                          className="premium-input h-11 border-primary/30 bg-primary/5 rounded-2xl placeholder:text-primary/20" 
+                          onChange={(e) => setSignupData({ ...signupData, secretKey: e.target.value })}
+                          required
+                          className="premium-input h-11 border-primary/30 bg-primary/5 rounded-2xl placeholder:text-primary/20"
                         />
                       </div>
                     )}
@@ -252,9 +252,6 @@ export default function Login() {
             Copyright Notice
           </Link>
         </div>
-        <p className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground/30">
-          POWERED BY DAVNS INDUSTRIES
-        </p>
       </footer>
     </div>
   );

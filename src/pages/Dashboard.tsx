@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Users, Calendar, Clock, CheckCircle, XCircle, TrendingUp, AlertCircle, BarChart3, PieChart as PieChartIcon, CheckCircle2 } from "lucide-react";
+import { Users, Calendar, Clock, AlertCircle, BarChart3, PieChart as PieChartIcon, CheckCircle2 } from "lucide-react";
 import { DownloadReportDialog } from "@/components/reports/DownloadReportDialog";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useActiveWorkerCount } from "@/hooks/useWorkers";
-import { useTodayAttendanceStats, useTodayAttendanceWithWorkers } from "@/hooks/useAttendance";
-import { useTodayOvertimeStats } from "@/hooks/useOvertime";
-import { useBriefingAnalytics } from "@/hooks/useBriefingAttendance";
+import { useWorkers, useActiveWorkerCount } from "@/hooks/useWorkers";
+import { useTodayAttendanceStats, useTodayAttendanceWithWorkers, useAttendanceStatsByRange } from "@/hooks/useAttendance";
+import { useTodayOvertimeStats, useOvertimeStatsByRange } from "@/hooks/useOvertime";
+import { useBriefingAnalytics, useBriefingStatsByRange } from "@/hooks/useBriefingAttendance";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,18 +17,38 @@ import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
+  AreaChart, Area,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { subDays, startOfDay, endOfDay } from "date-fns";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 
 const COLORS = ["hsl(var(--success))", "hsl(var(--destructive))", "hsl(var(--warning))"];
 
 export default function Dashboard() {
   const [showList, setShowList] = useState<"present" | "absent" | "leave" | null>(null);
+  const [rangeType, setRangeType] = useState<"7d" | "30d" | "custom">("7d");
+  const [customRange, setCustomRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string>("all");
+
   const { user } = useAuth();
+  const { data: workers } = useWorkers();
   const { data: workerCount } = useActiveWorkerCount();
+
+  const startDate = rangeType === "7d" ? subDays(new Date(), 7) : rangeType === "30d" ? subDays(new Date(), 30) : customRange.from;
+  const endDate = rangeType === "custom" ? customRange.to : new Date();
+
+  const { data: attendanceRangeStats } = useAttendanceStatsByRange(startDate, endDate, selectedWorkerId);
+  const { data: briefingRangeStats } = useBriefingStatsByRange(startDate, endDate, selectedWorkerId);
+  const { data: overtimeRangeStats } = useOvertimeStatsByRange(startDate, endDate, selectedWorkerId);
+
   const { data: attendanceStats } = useTodayAttendanceStats();
   const { data: attendanceDetails } = useTodayAttendanceWithWorkers();
-  const { data: overtimeStats } = useTodayOvertimeStats();
   const { data: briefingAnalytics } = useBriefingAnalytics(new Date());
 
   const stats = {
@@ -38,20 +58,21 @@ export default function Dashboard() {
     leave: attendanceStats?.leave || 0,
   };
 
-  const trendData = briefingAnalytics?.byDate
-    ? Object.entries(briefingAnalytics.byDate)
-        .slice(-7)
-        .map(([date, data]) => ({
-          date: date.slice(5),
-          present: data.present,
-        }))
+  const trendData = briefingRangeStats?.byDate
+    ? Object.entries(briefingRangeStats.byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, data]) => ({
+        date: date.slice(5),
+        present: data.present,
+        absent: data.absent,
+      }))
     : [];
 
-  const pieData = [
-    { name: "Present", value: stats.present, color: "hsl(var(--success))" },
-    { name: "Absent", value: stats.absent, color: "hsl(var(--destructive))" },
-    { name: "Leave", value: stats.leave, color: "hsl(var(--warning))" },
-  ];
+  const pieData = attendanceRangeStats ? [
+    { name: "Present", value: attendanceRangeStats.present, color: "hsl(var(--success))" },
+    { name: "Absent", value: attendanceRangeStats.absent, color: "hsl(var(--destructive))" },
+    { name: "Leave", value: attendanceRangeStats.leave, color: "hsl(var(--warning))" },
+  ] : [];
 
   const getListData = () => {
     if (!attendanceDetails || !showList) return [];
@@ -64,47 +85,102 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-8 animate-fade-in max-w-full overflow-hidden pb-20">
       {/* Premium Dashboard Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black tracking-tight text-gradient">Dashboard</h1>
+            <h1 className="text-4xl font-black tracking-tight text-gradient">Dashboard</h1>
             <Badge variant="outline" className="h-6 rounded-full font-black text-[10px] uppercase bg-primary/10 text-primary border-primary/20 shadow-sm px-3">
-               {user?.role || "ADMIN"}
+              {user?.role || "ADMIN"}
             </Badge>
           </div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
             STELANTIS ATTENDANCE ANALYTICS · {format(new Date(), "MMMM yyyy")}
           </p>
         </div>
-        <DownloadReportDialog />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center bg-muted/20 p-1 rounded-2xl border border-white/5">
+            <Button
+              variant={rangeType === "7d" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-xl font-black text-[10px] uppercase tracking-widest h-8"
+              onClick={() => setRangeType("7d")}
+            >7 Days</Button>
+            <Button
+              variant={rangeType === "30d" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-xl font-black text-[10px] uppercase tracking-widest h-8"
+              onClick={() => setRangeType("30d")}
+            >30 Days</Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={rangeType === "custom" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="rounded-xl font-black text-[10px] uppercase tracking-widest h-8 gap-2"
+                >
+                  <Calendar className="w-3 h-3" />
+                  {rangeType === "custom" ? `${format(customRange.from, "MMM d")} - ${format(customRange.to, "MMM d")}` : "Custom"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarPicker
+                  mode="range"
+                  selected={{ from: customRange.from, to: customRange.to }}
+                  onSelect={(range: any) => {
+                    if (range?.from && range?.to) {
+                      setCustomRange({ from: range.from, to: range.to });
+                      setRangeType("custom");
+                    }
+                  }}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
+            <SelectTrigger className="w-[180px] h-10 bg-muted/20 border-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+              <SelectValue placeholder="All Members" />
+            </SelectTrigger>
+            <SelectContent className="glass-morphism rounded-2xl border-white/10">
+              <SelectItem value="all" className="text-xs font-bold uppercase tracking-widest">All Members</SelectItem>
+              {workers?.map(w => (
+                <SelectItem key={w.id} value={w.id} className="text-xs font-bold uppercase tracking-widest">
+                  {w.worker_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <DownloadReportDialog />
+        </div>
       </div>
 
-      {/* Stats Grid - High End */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="cursor-pointer transition-all active:scale-95" onClick={() => {}}>
+        <div className="cursor-pointer transition-all active:scale-95 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent shadow-sm rounded-3xl" onClick={() => { }}>
           <StatCard
-            label="Total Active"
+            title="Total Active"
             value={stats.total}
             icon={Users}
-            className="border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent shadow-sm"
           />
         </div>
-        <div className="cursor-pointer transition-all active:scale-95" onClick={() => setShowList("present")}>
+        <div className="cursor-pointer transition-all active:scale-95 border-success/20 bg-gradient-to-br from-success/[0.03] to-transparent shadow-sm rounded-3xl" onClick={() => setShowList("present")}>
           <StatCard
-            label="Present Today"
+            title="Present Today"
             value={stats.present}
             icon={CheckCircle2}
-            className="border-success/20 bg-gradient-to-br from-success/[0.03] to-transparent shadow-sm"
-            subValue={`${stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}% Attendance Rate`}
+            variant="success"
+            subtitle={`${stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}% Attendance Rate`}
           />
         </div>
-        <div className="cursor-pointer transition-all active:scale-95" onClick={() => setShowList("absent")}>
+        <div className="cursor-pointer transition-all active:scale-95 border-destructive/20 bg-gradient-to-br from-destructive/[0.03] to-transparent text-destructive shadow-sm rounded-3xl" onClick={() => setShowList("absent")}>
           <StatCard
-            label="Absent / Leave"
+            title="Absent / Leave"
             value={stats.absent + stats.leave}
             icon={AlertCircle}
-            className="border-destructive/20 bg-gradient-to-br from-destructive/[0.03] to-transparent text-destructive shadow-sm"
-            subValue={`${stats.absent} Absent · ${stats.leave} On Leave`}
+            variant="destructive"
+            subtitle={`${stats.absent} Absent · ${stats.leave} On Leave`}
           />
         </div>
       </div>
@@ -114,8 +190,8 @@ export default function Dashboard() {
         <Card className="premium-card">
           <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0 px-2">
             <div>
-              <CardTitle className="section-header text-xs uppercase tracking-[0.15em] text-muted-foreground">Attendance Trends</CardTitle>
-              <CardDescription className="text-[10px] font-bold opacity-50">LAST 7 DAYS ACTIVITY</CardDescription>
+              <CardTitle className="section-header text-xs uppercase tracking-[0.15em] text-muted-foreground">Briefing Trends</CardTitle>
+              <CardDescription className="text-[10px] font-bold opacity-50">DAILY BRIEFING PARTICIPATION</CardDescription>
             </div>
             <div className="p-2 bg-muted/30 rounded-xl">
               <BarChart3 className="w-4 h-4 text-primary" />
@@ -123,19 +199,25 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="px-0 pt-2">
             <div className="h-64 sm:h-80 w-full pl-0">
-               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="4 4" className="stroke-border/30" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    className="text-[10px] font-black" 
-                    axisLine={false} 
+                  <XAxis
+                    dataKey="date"
+                    className="text-[10px] font-black"
+                    axisLine={false}
                     tickLine={false}
                     tick={{ fill: "hsl(var(--muted-foreground))" }}
                   />
-                  <YAxis 
-                    className="text-[10px] font-black" 
-                    axisLine={false} 
+                  <YAxis
+                    className="text-[10px] font-black"
+                    axisLine={false}
                     tickLine={false}
                     tick={{ fill: "hsl(var(--muted-foreground))" }}
                   />
@@ -150,16 +232,18 @@ export default function Dashboard() {
                       fontWeight: "bold",
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="present" 
-                    stroke="hsl(var(--success))" 
-                    strokeWidth={4} 
-                    dot={{ r: 4, strokeWidth: 2, fill: "hsl(var(--background))" }} 
+                  <Area
+                    type="monotone"
+                    dataKey="present"
+                    stroke="hsl(var(--success))"
+                    fillOpacity={1}
+                    fill="url(#colorPresent)"
+                    strokeWidth={4}
+                    dot={{ r: 4, strokeWidth: 2, fill: "hsl(var(--background))" }}
                     activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--success))" }}
                     animationDuration={1500}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
@@ -200,15 +284,15 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-3 gap-8 w-full -mt-10 px-4">
-               {pieData.map((item) => (
-                 <div key={item.name} className="flex flex-col items-center">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{item.name}</span>
-                    </div>
-                    <p className="text-xl font-black">{item.value}</p>
-                 </div>
-               ))}
+              {pieData.map((item) => (
+                <div key={item.name} className="flex flex-col items-center">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{item.name}</span>
+                  </div>
+                  <p className="text-xl font-black">{item.value}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -254,9 +338,9 @@ export default function Dashboard() {
             )}
           </div>
           <div className="p-4 bg-muted/10 border-t border-border/20">
-             <Button variant="ghost" className="w-full font-black text-xs uppercase tracking-widest py-6" onClick={() => setShowList(null)}>
-               Dismiss View
-             </Button>
+            <Button variant="ghost" className="w-full font-black text-xs uppercase tracking-widest py-6" onClick={() => setShowList(null)}>
+              Dismiss View
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

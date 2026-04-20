@@ -11,6 +11,7 @@ import Attendance from "./pages/Attendance";
 import Briefing from "./pages/Briefing";
 import Overtime from "./pages/Overtime";
 import OvertimePlanning from "./pages/OvertimePlanning";
+import OvertimeDashboard from "./pages/OvertimeDashboard";
 import Login from "./pages/Login";
 import Terms from "./pages/Terms";
 import Copyright from "./pages/Copyright";
@@ -61,6 +62,7 @@ function AppRoutes() {
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/briefing" element={<Briefing />} />
                 <Route path="/overtime" element={<Overtime />} />
+                <Route path="/overtime-dashboard" element={<OvertimeDashboard />} />
                 <Route path="/overtime-planning" element={<OvertimePlanning />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

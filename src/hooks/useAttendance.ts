@@ -22,7 +22,7 @@ export interface AttendanceWithWorker extends Attendance {
 
 export function useAttendanceByDate(date: Date) {
   const dateStr = format(date, "yyyy-MM-dd");
-  
+
   return useQuery({
     queryKey: ["attendance", dateStr],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export function useAttendanceByDate(date: Date) {
           )
         `)
         .eq("date", dateStr);
-      
+
       if (error) throw error;
       return data as AttendanceWithWorker[];
     },
@@ -52,9 +52,9 @@ export function useWorkerAttendanceStats(workerId: string) {
         .from("attendance")
         .select("status")
         .eq("worker_id", workerId);
-      
+
       if (error) throw error;
-      
+
       const stats = {
         total: data.length,
         present: data.filter((a) => a.status === "Present").length,
@@ -62,11 +62,11 @@ export function useWorkerAttendanceStats(workerId: string) {
         leave: data.filter((a) => a.status === "Leave").length,
         percentage: 0,
       };
-      
-      stats.percentage = stats.total > 0 
-        ? Math.round((stats.present / stats.total) * 100) 
+
+      stats.percentage = stats.total > 0
+        ? Math.round((stats.present / stats.total) * 100)
         : 0;
-      
+
       return stats;
     },
     enabled: !!workerId,
@@ -75,7 +75,7 @@ export function useWorkerAttendanceStats(workerId: string) {
 
 export function useTodayAttendanceStats() {
   const today = format(new Date(), "yyyy-MM-dd");
-  
+
   return useQuery({
     queryKey: ["attendance", "today", today],
     queryFn: async () => {
@@ -83,14 +83,14 @@ export function useTodayAttendanceStats() {
         .from("attendance")
         .select("status")
         .eq("date", today);
-      
+
       if (error) throw error;
-      
+
       const present = data.filter((a) => a.status === "Present").length;
       const absent = data.filter((a) => a.status === "Absent").length;
       const leave = data.filter((a) => a.status === "Leave").length;
       const total = present + absent + leave;
-      
+
       return {
         present,
         absent,
@@ -98,6 +98,49 @@ export function useTodayAttendanceStats() {
         total,
         percentage: total > 0 ? Math.round((present / total) * 100) : 0,
       };
+    },
+  });
+}
+
+export function useAttendanceStatsByRange(startDate: Date, endDate: Date, workerId?: string) {
+  const start = format(startDate, "yyyy-MM-dd");
+  const end = format(endDate, "yyyy-MM-dd");
+
+  return useQuery({
+    queryKey: ["attendance", "range", start, end, workerId],
+    queryFn: async () => {
+      let query = supabase
+        .from("attendance")
+        .select("status, date")
+        .gte("date", start)
+        .lte("date", end);
+
+      if (workerId && workerId !== "all") {
+        query = query.eq("worker_id", workerId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const stats = {
+        present: data.filter((a) => a.status === "Present").length,
+        absent: data.filter((a) => a.status === "Absent").length,
+        leave: data.filter((a) => a.status === "Leave").length,
+        total: data.length,
+        byDate: {} as Record<string, { present: number; absent: number; leave: number }>,
+      };
+
+      data.forEach((a) => {
+        if (!stats.byDate[a.date]) {
+          stats.byDate[a.date] = { present: 0, absent: 0, leave: 0 };
+        }
+        if (a.status === "Present") stats.byDate[a.date].present++;
+        else if (a.status === "Absent") stats.byDate[a.date].absent++;
+        else if (a.status === "Leave") stats.byDate[a.date].leave++;
+      });
+
+      return stats;
     },
   });
 }
@@ -140,7 +183,7 @@ export function useTodayAttendanceWithWorkers() {
 
 export function useMarkAttendance() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       workerId,
@@ -159,7 +202,7 @@ export function useMarkAttendance() {
         )
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -174,7 +217,7 @@ export function useMarkAttendance() {
 }
 export function useDeleteAttendance() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       workerId,
@@ -187,7 +230,7 @@ export function useDeleteAttendance() {
         .from("attendance")
         .delete()
         .match({ worker_id: workerId, date });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {

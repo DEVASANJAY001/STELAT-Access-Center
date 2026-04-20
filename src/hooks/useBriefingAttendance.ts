@@ -22,7 +22,7 @@ export interface BriefingAttendanceWithWorker extends BriefingAttendance {
 
 export function useBriefingAttendanceByDate(date: Date) {
   const dateStr = format(date, "yyyy-MM-dd");
-  
+
   return useQuery({
     queryKey: ["briefing_attendance", dateStr],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export function useBriefingAttendanceByDate(date: Date) {
           )
         `)
         .eq("date", dateStr);
-      
+
       if (error) throw error;
       return data as BriefingAttendanceWithWorker[];
     },
@@ -49,7 +49,7 @@ export function useBriefingAnalytics(month?: Date, year?: Date) {
     queryKey: ["briefing_attendance", "analytics", month?.toISOString(), year?.toISOString()],
     queryFn: async () => {
       let query = supabase.from("briefing_attendance").select("date, status");
-      
+
       if (month) {
         const start = format(startOfMonth(month), "yyyy-MM-dd");
         const end = format(endOfMonth(month), "yyyy-MM-dd");
@@ -59,14 +59,14 @@ export function useBriefingAnalytics(month?: Date, year?: Date) {
         const end = format(endOfYear(year), "yyyy-MM-dd");
         query = query.gte("date", start).lte("date", end);
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) throw error;
-      
+
       // Group by date
       const byDate: Record<string, { present: number; absent: number }> = {};
-      
+
       data.forEach((record) => {
         if (!byDate[record.date]) {
           byDate[record.date] = { present: 0, absent: 0 };
@@ -77,12 +77,12 @@ export function useBriefingAnalytics(month?: Date, year?: Date) {
           byDate[record.date].absent++;
         }
       });
-      
+
       // Calculate totals and percentages
       const totalPresent = data.filter((r) => r.status === "Present").length;
       const totalAbsent = data.filter((r) => r.status === "Absent").length;
       const total = totalPresent + totalAbsent;
-      
+
       return {
         byDate,
         totalPresent,
@@ -96,7 +96,7 @@ export function useBriefingAnalytics(month?: Date, year?: Date) {
 
 export function useMarkBriefingAttendance() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       workerId,
@@ -115,7 +115,7 @@ export function useMarkBriefingAttendance() {
         )
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -130,7 +130,7 @@ export function useMarkBriefingAttendance() {
 }
 export function useDeleteBriefingAttendance() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       workerId,
@@ -143,7 +143,7 @@ export function useDeleteBriefingAttendance() {
         .from("briefing_attendance")
         .delete()
         .match({ worker_id: workerId, date });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -152,6 +152,47 @@ export function useDeleteBriefingAttendance() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to remove record: ${error.message}`);
+    },
+  });
+}
+
+export function useBriefingStatsByRange(startDate: Date, endDate: Date, workerId?: string) {
+  const start = format(startDate, "yyyy-MM-dd");
+  const end = format(endDate, "yyyy-MM-dd");
+
+  return useQuery({
+    queryKey: ["briefing_attendance", "range", start, end, workerId],
+    queryFn: async () => {
+      let query = supabase
+        .from("briefing_attendance")
+        .select("status, date")
+        .gte("date", start)
+        .lte("date", end);
+
+      if (workerId && workerId !== "all") {
+        query = query.eq("worker_id", workerId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const byDate: Record<string, { present: number; absent: number }> = {};
+      data.forEach((r) => {
+        if (!byDate[r.date]) byDate[r.date] = { present: 0, absent: 0 };
+        if (r.status === "Present") byDate[r.date].present++;
+        else byDate[r.date].absent++;
+      });
+
+      const totalPresent = data.filter((r) => r.status === "Present").length;
+      const totalAbsent = data.filter((r) => r.status === "Absent").length;
+
+      return {
+        byDate,
+        present: totalPresent,
+        absent: totalAbsent,
+        total: data.length
+      };
     },
   });
 }

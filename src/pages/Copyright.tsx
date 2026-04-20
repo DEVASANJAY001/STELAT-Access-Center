@@ -8,9 +8,9 @@ export default function Copyright() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-12 lg:p-24 animate-fade-in">
       <div className="max-w-3xl mx-auto space-y-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)} 
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
           className="gap-2 -ml-4 hover:bg-primary/10 rounded-full transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -43,19 +43,12 @@ export default function Copyright() {
               The Stellantis name, logo, and branding are registered trademarks. Unauthorized use is a violation of intellectual property laws.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-black text-foreground uppercase tracking-widest">Development Credits</h2>
-            <p className="text-sm">
-              This application was expertly developed by <strong>DAVNS INDUSTRIES</strong>. All rights relating to the implementation logic and proprietary UI components are reserved.
-            </p>
-          </section>
         </div>
 
         <div className="pt-12 border-t border-border/40">
-           <p className="text-xs text-center font-black tracking-tighter text-muted-foreground/40">
-             V2.4.0 · STELAT-CORP-SYS
-           </p>
+          <p className="text-xs text-center font-black tracking-tighter text-muted-foreground/40">
+            V2.4.0 · STELAT-CORP-SYS
+          </p>
         </div>
       </div>
     </div>

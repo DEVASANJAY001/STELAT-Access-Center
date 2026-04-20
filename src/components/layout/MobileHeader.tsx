@@ -16,6 +16,7 @@ const menuItems = [
   { icon: Calendar, label: "Attendance", path: "/attendance" },
   { icon: ClipboardList, label: "Briefing", path: "/briefing" },
   { icon: Clock, label: "Overtime", path: "/overtime" },
+  { icon: LayoutDashboard, label: "OT Analytics", path: "/overtime-dashboard" },
   { icon: CalendarClock, label: "OT Planning", path: "/overtime-planning" },
 ];
 
@@ -38,7 +39,6 @@ export function MobileHeader() {
           <div className="p-4 border-b border-sidebar-border">
             <img src="/stellantis-logo.svg" alt="Stellantis" className="h-12 w-auto brightness-0 invert opacity-100 mb-2" />
             <h1 className="text-sm font-semibold text-sidebar-foreground">Attendance Tracker</h1>
-            <p className="text-[9px] text-sidebar-foreground/40 font-medium">Developed by DAVNS INDUSTRIES</p>
             <p className="text-[10px] text-sidebar-foreground/50 font-medium mt-1">
               {role === "admin" ? "Admin" : "Worker"}
             </p>

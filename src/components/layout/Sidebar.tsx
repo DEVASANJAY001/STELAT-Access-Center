@@ -13,6 +13,7 @@ const menuItems = [
   { icon: Calendar, label: "Attendance", path: "/attendance" },
   { icon: ClipboardList, label: "Briefing", path: "/briefing" },
   { icon: Clock, label: "Overtime", path: "/overtime" },
+  { icon: LayoutDashboard, label: "OT Analytics", path: "/overtime-dashboard" },
   { icon: CalendarClock, label: "OT Planning", path: "/overtime-planning" },
 ];
 
@@ -28,9 +29,6 @@ export function Sidebar() {
         </div>
         <div className="mt-2">
           <h1 className="text-sm font-semibold text-sidebar-foreground tracking-tight">Attendance Tracker</h1>
-          <p className="text-[9px] text-sidebar-foreground/40 font-medium mt-0.5">
-            Developed by DAVNS INDUSTRIES
-          </p>
         </div>
         <p className="text-[10px] text-sidebar-foreground/50 font-medium mt-1">
           {role === "admin" ? "Admin Panel" : "Worker View"}
