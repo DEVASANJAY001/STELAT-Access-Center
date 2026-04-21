@@ -34,6 +34,7 @@ export default function Dashboard() {
     from: subDays(new Date(), 7),
     to: new Date(),
   });
+  const [briefingRange, setBriefingRange] = useState<"7d" | "30d" | "all">("7d");
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("all");
 
   const { user } = useAuth();
@@ -43,8 +44,10 @@ export default function Dashboard() {
   const startDate = rangeType === "7d" ? subDays(new Date(), 7) : rangeType === "30d" ? subDays(new Date(), 30) : customRange.from;
   const endDate = rangeType === "custom" ? customRange.to : new Date();
 
+  const briefingStartDate = briefingRange === "7d" ? subDays(new Date(), 7) : briefingRange === "30d" ? subDays(new Date(), 30) : subDays(new Date(), 365); // "all" last year
+
   const { data: attendanceRangeStats } = useAttendanceStatsByRange(startDate, endDate, selectedWorkerId);
-  const { data: briefingRangeStats } = useBriefingStatsByRange(startDate, endDate, selectedWorkerId);
+  const { data: briefingRangeStats } = useBriefingStatsByRange(briefingStartDate, new Date(), selectedWorkerId);
   const { data: overtimeRangeStats } = useOvertimeStatsByRange(startDate, endDate, selectedWorkerId);
 
   const { data: attendanceStats } = useTodayAttendanceStats();
@@ -193,8 +196,23 @@ export default function Dashboard() {
               <CardTitle className="section-header text-xs uppercase tracking-[0.15em] text-muted-foreground">Briefing Trends</CardTitle>
               <CardDescription className="text-[10px] font-bold opacity-50">DAILY BRIEFING PARTICIPATION</CardDescription>
             </div>
-            <div className="p-2 bg-muted/30 rounded-xl">
-              <BarChart3 className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-muted/30 p-1 rounded-xl border border-white/5">
+                {(["7d", "30d", "all"] as const).map((r) => (
+                  <Button
+                    key={r}
+                    variant={briefingRange === r ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 px-3 rounded-lg font-black text-[9px] uppercase tracking-wider"
+                    onClick={() => setBriefingRange(r)}
+                  >
+                    {r === "all" ? "All" : r.toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+              <div className="p-2 bg-muted/30 rounded-xl">
+                <BarChart3 className="w-4 h-4 text-primary" />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="px-0 pt-2">

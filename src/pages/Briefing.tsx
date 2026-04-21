@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Calendar as CalendarIcon, CheckCircle, XCircle, Search, Trash2 } from "lucide-react";
 import { useWorkers } from "@/hooks/useWorkers";
 import {
@@ -69,8 +69,8 @@ export default function Briefing() {
 
   const filteredWorkers = (workers?.filter((w) => {
     const isActive = w.status === "Active";
-    const matchesSearch = w.worker_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         w.worker_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = w.worker_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.worker_id.toLowerCase().includes(searchTerm.toLowerCase());
     return isActive && matchesSearch;
   }) || []).slice().sort((a, b) => (a.worker_name || "").localeCompare(b.worker_name || ""));
 
@@ -89,12 +89,12 @@ export default function Briefing() {
 
   const barChartData = analytics?.byDate
     ? Object.entries(analytics.byDate)
-        .slice(-10)
-        .map(([date, data]) => ({
-          date: date.slice(5),
-          present: data.present,
-          absent: data.absent,
-        }))
+      .slice(-10)
+      .map(([date, data]) => ({
+        date: date.slice(5),
+        present: data.present,
+        absent: data.absent,
+      }))
     : [];
 
   const activeWorkers = workers?.filter((w) => w.status === "Active") || [];
@@ -110,30 +110,40 @@ export default function Briefing() {
               MEETING ATTENDANCE
             </p>
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-2.5 gap-1.5 rounded-lg border-border/60 bg-background/50 backdrop-blur-sm shadow-sm transition-all active:scale-95">
-                <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] font-bold">{format(selectedDate, "MMM dd")}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 rounded-lg border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-all font-bold text-[10px] uppercase"
+              onClick={() => setSelectedDate(addDays(new Date(), 1))}
+            >
+              Tomorrow
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 px-2.5 gap-1.5 rounded-lg border-border/60 bg-background/50 backdrop-blur-sm shadow-sm transition-all active:scale-95">
+                  <CalendarIcon className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-[10px] font-bold">{format(selectedDate, "MMM dd")}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
 
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input 
-            placeholder="Search workers..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+          <Input
+            placeholder="Search workers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 h-9 text-xs rounded-lg border-border/40 bg-muted/40 focus:bg-background transition-all shadow-inner"
           />
         </div>
@@ -155,8 +165,8 @@ export default function Briefing() {
         </div>
       </div>
 
-      {/* Analytics Charts - Hidden on mobile for extreme density, visible on large screens */}
-      <div className="hidden lg:grid grid-cols-3 gap-6">
+      {/* Analytics Charts - Visible on all screens, stacked on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <Card className="lg:col-span-2 premium-card shadow-sm">
           <CardHeader className="p-4">
             <CardTitle className="section-header text-xs uppercase tracking-widest text-muted-foreground">Daily Trend</CardTitle>
@@ -221,7 +231,7 @@ export default function Briefing() {
       <div className="space-y-2 pb-20">
         {isLoadingWorkers || isLoadingAttendance ? (
           <div className="space-y-2 px-1">
-             {[1,2,3,4,5,6].map(i => <div key={i} className="h-12 bg-muted/40 animate-pulse rounded-xl" />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-12 bg-muted/40 animate-pulse rounded-xl" />)}
           </div>
         ) : filteredWorkers.length === 0 ? (
           <div className="text-center py-20 px-6">
@@ -231,12 +241,12 @@ export default function Briefing() {
           filteredWorkers.map((worker) => {
             const currentStatus = attendanceMap.get(worker.id);
             return (
-              <div 
-                key={worker.id} 
+              <div
+                key={worker.id}
                 className={cn(
                   "premium-card flex items-center justify-between p-2 pl-3 border-l-4 transition-all duration-300 rounded-xl",
-                  currentStatus === "Present" ? "border-l-success bg-success/[0.01]" : 
-                  currentStatus === "Absent" ? "border-l-destructive bg-destructive/[0.01]" : "border-l-muted bg-card"
+                  currentStatus === "Present" ? "border-l-success bg-success/[0.01]" :
+                    currentStatus === "Absent" ? "border-l-destructive bg-destructive/[0.01]" : "border-l-muted bg-card"
                 )}
               >
                 <div className="flex-1 min-w-0 pr-2">
@@ -249,26 +259,26 @@ export default function Briefing() {
                 <div className="flex items-center gap-1.5 px-1">
                   {isAdmin ? (
                     <div className="flex items-center gap-1.5">
-                      <Button 
+                      <Button
                         size="icon"
                         variant="outline"
                         className={cn(
                           "h-9 w-9 rounded-full font-black text-xs border-2 transition-all active:scale-90",
-                          currentStatus === "Present" 
-                            ? "bg-success border-success text-white shadow-sm" 
+                          currentStatus === "Present"
+                            ? "bg-success border-success text-white shadow-sm"
                             : "bg-background border-success/20 text-success hover:bg-success/5"
                         )}
                         onClick={() => handleMarkAttendance(worker.id, "Present")}
                       >
                         P
                       </Button>
-                      <Button 
+                      <Button
                         size="icon"
                         variant="outline"
                         className={cn(
                           "h-9 w-9 rounded-full font-black text-xs border-2 transition-all active:scale-90",
-                          currentStatus === "Absent" 
-                            ? "bg-destructive border-destructive text-white shadow-sm" 
+                          currentStatus === "Absent"
+                            ? "bg-destructive border-destructive text-white shadow-sm"
                             : "bg-background border-destructive/20 text-destructive hover:bg-destructive/5"
                         )}
                         onClick={() => handleMarkAttendance(worker.id, "Absent")}
@@ -276,9 +286,9 @@ export default function Briefing() {
                         A
                       </Button>
                       {currentStatus && (
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           className="h-8 w-8 rounded-full text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDeleteAttendance(worker.id)}
                         >

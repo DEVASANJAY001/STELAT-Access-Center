@@ -118,8 +118,7 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
-
+  }
 
   button,
   a,
@@ -215,6 +214,10 @@
 
   .badge-inactive {
     @apply bg-muted text-muted-foreground border border-border;
+  }
+
+  .watermark-top-right {
+    @apply fixed top-12 right-4 z-[9999] pointer-events-none opacity-20 text-[8px] font-black uppercase tracking-widest text-muted-foreground select-none;
   }
 }
 
